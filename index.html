@@ -1,9 +1,10 @@
-  <!DOCTYPE html>
+</html>
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Capibara Letras - Niveles</title>
+<title>Capibara Letras - Sopa</title>
 <style>
 body {font-family: 'Comic Sans MS', sans-serif; text-align: center; background: #FFF8DC; margin: 0; padding: 10px;}
 h1 {color: #8B4513; margin: 5px 0; font-size: 28px;}
@@ -51,6 +52,7 @@ let puntos = 0;
 let palabraActual = '';
 let seleccion = [];
 let casillas = [];
+const letrasABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 function nuevoJuego() {
   if(nivelActual >= niveles.length) {
@@ -65,21 +67,27 @@ function nuevoJuego() {
   document.getElementById('mensaje').textContent = `Encuentra: ${palabraActual}`;
   document.getElementById('nivel').textContent = nivelActual + 1;
   
-  const letras = palabraActual.split('').sort(() => Math.random() - 0.5);
+  // 1. Creamos array con las letras de la palabra
+  let letrasTablero = palabraActual.split('');
+  
+  // 2. Rellenamos el resto con letras al azar hasta tener 25
+  while(letrasTablero.length < 25) {
+    letrasTablero.push(letrasABC[Math.floor(Math.random() * letrasABC.length)]);
+  }
+  
+  // 3. Revolvemos todo para que sea sopa de letras
+  letrasTablero.sort(() => Math.random() - 0.5);
+  
   const tablero = document.getElementById('tablero');
   tablero.innerHTML = '';
   casillas = [];
   
+  // 4. Creamos el tablero 5x5 lleno de letras
   for(let i = 0; i < 25; i++) {
     const div = document.createElement('div');
     div.className = 'casilla';
-    if(i < letras.length) {
-      div.textContent = letras[i];
-      div.onclick = () => seleccionarLetra(i, letras[i]);
-    } else {
-      div.textContent = '🧀';
-      div.style.fontSize = '20px';
-    }
+    div.textContent = letrasTablero[i];
+    div.onclick = () => seleccionarLetra(i, letrasTablero[i]);
     tablero.appendChild(div);
     casillas.push(div);
   }
