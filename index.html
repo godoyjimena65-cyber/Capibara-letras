@@ -3,168 +3,91 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Capibara Letras</title>
+<title>Capibara Letras - Niveles</title>
 <style>
-body { font-family: 'Comic Sans MS', cursive; background: linear-gradient(135deg, #FFE5B4, #FFCC80); text-align: center; margin:0; padding:10px; }
-h1 { color: #8B4513; margin: 10px 0; }
-#tablero { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; max-width: 360px; margin: 15px auto; }
-.casilla { aspect-ratio: 1; background: #FFF8E1; border: 3px solid #D2691E; border-radius: 12px; font-size: 24px; font-weight: bold; color: #5D4037; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
-.casilla.seleccionada { background: #FFD54F; transform: scale(0.95); }
-.capibara { position: absolute; bottom: 2px; right: 2px; font-size: 14px; }
-#puntos { font-size: 22px; color: #8B4513; margin: 10px; }
-.instruccion { background: #FFF3E0; border: 2px dashed #D2691E; padding: 8px; margin: 10px auto; max-width: 340px; border-radius: 10px; }
+body {font-family: 'Comic Sans MS', sans-serif; text-align: center; background: #FFF8DC; margin: 0; padding: 10px;}
+h1 {color: #8B4513; margin: 5px 0; font-size: 28px;}
+#info {display: flex; justify-content: space-around; max-width: 300px; margin: 5px auto; font-weight: bold; color: #8B4513;}
+#tablero {display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; max-width: 300px; margin: 10px auto;}
+.casilla {aspect-ratio: 1; background: #F5DEB3; border: 2px solid #8B4513; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; cursor: pointer;}
+.casilla.seleccionado {background: #FFD54F; transform: scale(1.1);}
+.capibara {position: absolute; bottom: 2px; right: 2px; font-size: 12px;}
+#palabra {font-size: 20px; color: #8B4513; margin: 8px; min-height: 25px;}
+#mensaje {font-size: 16px; color: #2E8B57; font-weight: bold; min-height: 22px; margin: 5px;}
+button {background: #8B4513; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 20px; font-size: 16px; cursor: pointer;}
+#final {display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,248,220,0.95); align-items: center; justify-content: center; flex-direction: column;}
+#final h2 {font-size: 32px; color: #8B4513;}
 </style>
 </head>
 <body>
 <h1>🧀 Capibara Letras 🧀</h1>
-<div class="instruccion">Junta 3 letras iguales para que los capibaras las lean</div>
-<div id="puntos">Puntos: <span id="score">0</span></div>
+<div id="info">
+  <div>Nivel: <span id="nivel">1</span>/5</div>
+  <div>Puntos: <span id="puntos">0</span></div>
+</div>
+<div id="palabra"></div>
 <div id="tablero"></div>
+<div id="mensaje"></div>
+<button onclick="nuevoJuego()">Reiniciar Nivel</button>
+
+<div id="final">
+  <h2>¡GANASTE TODO! 🎉🧀</h2>
+  <p style="font-size: 20px;">Completaste los 5 niveles</p>
+  <p style="font-size: 18px;">Puntaje final: <span id="puntosFinal">0</span></p>
+  <button onclick="reiniciarTodo()">Jugar de Nuevo</button>
+</div>
 
 <script>
-const FILAS = 6, COLS = 6;
-const LETRAS = 'AEIOUAEIOUBCDFGHLMNPRST';
-const CAPIBARAS = ['🧀','😎','🌮','✨','🎩','🕶️'];
-let tablero = [], seleccion = null, puntos = 0;
+const niveles = [
+  ['SOL','MAR','PAN','LUZ','SAL'], // Nivel 1: 3 letras
+  ['QUESO','AGUA','CIELO','VERDE','FLOR'], // Nivel 2: 5 letras
+  ['AMIGO','LIBRO','PERRO','LLUVIA','NIEVE'], // Nivel 3: 6 letras
+  ['JUEGOS','ESCUELA','FAMILIA','VENTANA'], // Nivel 4: 7 letras
+  ['CAPIBARA','CHOCOLATE','ELEFANTE'] // Nivel 5: 8+ letras
+];
 
-function letraAleatoria() {
-  return LETRAS[Math.floor(Math.random() * LETRAS.length)];
-}
+let nivelActual = 0;
+let puntos = 0;
+let palabraActual = '';
+let seleccion = [];
+let casillas = [];
 
-function capibaraRandom() {
-  return CAPIBARAS[Math.floor(Math.random() * CAPIBARAS.length)];
-}
-
-function iniciarJuego() {
-  puntos = 0;
-  document.getElementById('score').textContent = puntos;
-  tablero = [];
-  const divTablero = document.getElementById('tablero');
-  divTablero.innerHTML = '';
-
-  for(let i = 0; i < FILAS; i++) {
-    tablero[i] = [];
-    for(let j = 0; j < COLS; j++) {
-      tablero[i][j] = { letra: letraAleatoria(), capi: capibaraRandom() };
-      const div = document.createElement('div');
-      div.className = 'casilla';
-      div.innerHTML = tablero[i][j].letra + `<span class="capibara">${tablero[i][j].capi}</span>`;
-      div.dataset.fila = i;
-      div.dataset.col = j;
-      div.onclick = () => clickCasilla(i, j);
-      divTablero.appendChild(div);
+function nuevoJuego() {
+  if(nivelActual >= niveles.length) {
+    mostrarFinal();
+    return;
+  }
+  
+  const palabrasNivel = niveles[nivelActual];
+  palabraActual = palabrasNivel[Math.floor(Math.random() * palabrasNivel.length)];
+  seleccion = [];
+  document.getElementById('palabra').textContent = '';
+  document.getElementById('mensaje').textContent = `Encuentra: ${palabraActual}`;
+  document.getElementById('nivel').textContent = nivelActual + 1;
+  
+  const letras = palabraActual.split('').sort(() => Math.random() - 0.5);
+  const tablero = document.getElementById('tablero');
+  tablero.innerHTML = '';
+  casillas = [];
+  
+  for(let i = 0; i < 25; i++) {
+    const div = document.createElement('div');
+    div.className = 'casilla';
+    if(i < letras.length) {
+      div.textContent = letras[i];
+      div.onclick = () => seleccionarLetra(i, letras[i]);
+    } else {
+      div.textContent = '🧀';
+      div.style.fontSize = '20px';
     }
-  }
-  revisarMatchesSinPuntos();
-}
-
-function clickCasilla(f, c) {
-  const div = document.querySelector(`[data-fila="${f}"][data-col="${c}"]`);
-  if (!seleccion) {
-    seleccion = {f, c, div};
-    div.classList.add('seleccionada');
-  } else {
-    const df = Math.abs(seleccion.f - f);
-    const dc = Math.abs(seleccion.c - c);
-    if ((df === 1 && dc === 0) || (df === 0 && dc === 1)) {
-      intercambiar(seleccion.f, seleccion.c, f, c);
-      setTimeout(() => {
-        if (!revisarMatches()) {
-          intercambiar(seleccion.f, seleccion.c, f, c);
-        }
-      }, 300);
-    }
-    seleccion.div.classList.remove('seleccionada');
-    seleccion = null;
+    tablero.appendChild(div);
+    casillas.push(div);
   }
 }
 
-function intercambiar(f1, c1, f2, c2) {
-  [tablero[f1][c1], tablero[f2][c2]] = [tablero[f2][c2], tablero[f1][c1]];
-  actualizarTablero();
-}
-
-function actualizarTablero() {
-  const divs = document.querySelectorAll('.casilla');
-  divs.forEach(div => {
-    const f = parseInt(div.dataset.fila);
-    const c = parseInt(div.dataset.col);
-    div.innerHTML = tablero[f][c].letra + `<span class="capibara">${tablero[f][c].capi}</span>`;
-  });
-}
-
-function revisarMatches() {
-  let encontreMatch = false;
-  let aBorrar = Array(FILAS).fill().map(() => Array(COLS).fill(false));
-
-  for(let i = 0; i < FILAS; i++) {
-    for(let j = 0; j < COLS - 2; j++) {
-      let letra = tablero[i][j].letra;
-      if (letra && letra === tablero[i][j+1].letra && letra === tablero[i][j+2].letra) {
-        aBorrar[i][j] = aBorrar[i][j+1] = aBorrar[i][j+2] = true;
-        encontreMatch = true;
-      }
-    }
-  }
-  for(let j = 0; j < COLS; j++) {
-    for(let i = 0; i < FILAS - 2; i++) {
-      let letra = tablero[i][j].letra;
-      if (letra && letra === tablero[i+1][j].letra && letra === tablero[i+2][j].letra) {
-        aBorrar[i][j] = aBorrar[i+1][j] = aBorrar[i+2][j] = true;
-        encontreMatch = true;
-      }
-    }
-  }
-
-  if (encontreMatch) {
-    for(let i = 0; i < FILAS; i++) {
-      for(let j = 0; j < COLS; j++) {
-        if (aBorrar[i][j]) {
-          tablero[i][j] = {letra: '', capi: ''};
-          puntos += 10;
-        }
-      }
-    }
-    document.getElementById('score').textContent = puntos;
-    setTimeout(() => { caerLetras(); llenarVacios(); actualizarTablero(); revisarMatches(); }, 400);
-  }
-  return encontreMatch;
-}
-
-function revisarMatchesSinPuntos() {
-  while(revisarMatches()) {
-    caerLetras();
-    llenarVacios();
-    actualizarTablero();
-  }
-  puntos = 0;
-  document.getElementById('score').textContent = puntos;
-}
-
-function caerLetras() {
-  for(let j = 0; j < COLS; j++) {
-    let vacios = 0;
-    for(let i = FILAS-1; i >= 0; i--) {
-      if (tablero[i][j].letra === '') vacios++;
-      else if (vacios > 0) {
-        tablero[i + vacios][j] = tablero[i][j];
-        tablero[i][j] = {letra: '', capi: ''};
-      }
-    }
-  }
-}
-
-function llenarVacios() {
-  for(let i = 0; i < FILAS; i++) {
-    for(let j = 0; j < COLS; j++) {
-      if (tablero[i][j].letra === '') {
-        tablero[i][j] = { letra: letraAleatoria(), capi: capibaraRandom() };
-      }
-    }
-  }
-}
-
-iniciarJuego();
-</script>
-</body>
-</html>
+function seleccionarLetra(pos, letra) {
+  if(casillas[pos].classList.contains('seleccionado')) return;
+  casillas[pos].classList.add('seleccionado');
+  casillas[pos].innerHTML = letra + '<div class="capibara">🧀</div>';
+  seleccion.push({pos, letra});
+  document.getElementById('palabra').textContent = seleccion.map(s
