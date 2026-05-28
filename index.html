@@ -1,27 +1,28 @@
-</html>
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Capibara Letras - Sopa</title>
+<title>Capibara Letras con Sonido</title>
 <style>
 body {font-family: 'Comic Sans MS', sans-serif; text-align: center; background: #FFF8DC; margin: 0; padding: 10px;}
 h1 {color: #8B4513; margin: 5px 0; font-size: 28px;}
 #info {display: flex; justify-content: space-around; max-width: 300px; margin: 5px auto; font-weight: bold; color: #8B4513;}
 #tablero {display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; max-width: 300px; margin: 10px auto;}
-.casilla {aspect-ratio: 1; background: #F5DEB3; border: 2px solid #8B4513; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; cursor: pointer; position: relative;}
+.casilla {aspect-ratio: 1; background: #F5DEB3; border: 2px solid #8B4513; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; cursor: pointer; position: relative;}
+.casilla:active {transform: scale(0.95);}
 .casilla.seleccionado {background: #FFD54F; transform: scale(1.1);}
 .capibara {position: absolute; bottom: 2px; right: 2px; font-size: 12px;}
-#palabra {font-size: 20px; color: #8B4513; margin: 8px; min-height: 25px;}
-#mensaje {font-size: 16px; color: #2E8B57; font-weight: bold; min-height: 22px; margin: 5px;}
-button {background: #8B4513; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 20px; font-size: 16px; cursor: pointer;}
+#palabra {font-size: 24px; color: #8B4513; margin: 8px; min-height: 30px; font-weight: bold;}
+#mensaje {font-size: 18px; color: #2E8B57; font-weight: bold; min-height: 25px; margin: 5px;}
+button {background: #8B4513; color: white; border: none; padding: 12px 25px; margin: 5px; border-radius: 20px; font-size: 16px; cursor: pointer;}
 #final {display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,248,220,0.95); align-items: center; justify-content: center; flex-direction: column; z-index: 100;}
 #final h2 {font-size: 32px; color: #8B4513;}
+.sonido-btn {background: #2E8B57; font-size: 14px; padding: 8px 15px;}
 </style>
 </head>
 <body>
-<h1>🧀 Capibara Letras 🧀</h1>
+<h1>🧀 Capibara Letras 🔊</h1>
 <div id="info">
   <div>Nivel: <span id="nivel">1</span>/5</div>
   <div>Puntos: <span id="puntos">0</span></div>
@@ -29,11 +30,12 @@ button {background: #8B4513; color: white; border: none; padding: 10px 20px; mar
 <div id="palabra"></div>
 <div id="tablero"></div>
 <div id="mensaje"></div>
+<button class="sonido-btn" onclick="repetirPalabra()">🔊 Repetir palabra</button>
 <button onclick="nuevoJuego()">Reiniciar Nivel</button>
 
 <div id="final">
   <h2>¡GANASTE TODO! 🎉🧀</h2>
-  <p style="font-size: 20px;">Completaste los 5 niveles</p>
+  <p style="font-size: 20px;">¡Ya sabes leer!</p>
   <p style="font-size: 18px;">Puntaje final: <span id="puntosFinal">0</span></p>
   <button onclick="reiniciarTodo()">Jugar de Nuevo</button>
 </div>
@@ -54,35 +56,47 @@ let seleccion = [];
 let casillas = [];
 const letrasABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+// FUNCIÓN PARA HABLAR
+function hablar(texto) {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel(); // Para que no se encimen los sonidos
+    const voz = new SpeechSynthesisUtterance(texto);
+    voz.lang = 'es-MX'; // Español de México
+    voz.rate = 0.8; // Más lento para que se entienda
+    window.speechSynthesis.speak(voz);
+  }
+}
+
+function repetirPalabra() {
+  hablar(palabraActual.toLowerCase());
+}
+
 function nuevoJuego() {
   if(nivelActual >= niveles.length) {
     mostrarFinal();
     return;
   }
-  
+
   const palabrasNivel = niveles[nivelActual];
   palabraActual = palabrasNivel[Math.floor(Math.random() * palabrasNivel.length)];
   seleccion = [];
   document.getElementById('palabra').textContent = '';
-  document.getElementById('mensaje').textContent = `Encuentra: ${palabraActual}`;
+  document.getElementById('mensaje').textContent = `Busca: ${palabraActual}`;
   document.getElementById('nivel').textContent = nivelActual + 1;
-  
-  // 1. Creamos array con las letras de la palabra
+
+  // Dice la palabra al empezar el nivel
+  setTimeout(() => hablar(`Encuentra la palabra ${palabraActual.toLowerCase()}`), 500);
+
   let letrasTablero = palabraActual.split('');
-  
-  // 2. Rellenamos el resto con letras al azar hasta tener 25
   while(letrasTablero.length < 25) {
     letrasTablero.push(letrasABC[Math.floor(Math.random() * letrasABC.length)]);
   }
-  
-  // 3. Revolvemos todo para que sea sopa de letras
   letrasTablero.sort(() => Math.random() - 0.5);
-  
+
   const tablero = document.getElementById('tablero');
   tablero.innerHTML = '';
   casillas = [];
-  
-  // 4. Creamos el tablero 5x5 lleno de letras
+
   for(let i = 0; i < 25; i++) {
     const div = document.createElement('div');
     div.className = 'casilla';
@@ -95,17 +109,22 @@ function nuevoJuego() {
 
 function seleccionarLetra(pos, letra) {
   if(casillas[pos].classList.contains('seleccionado')) return;
+
+  // DICE EL SONIDO DE LA LETRA
+  hablar(letra.toLowerCase());
+
   casillas[pos].classList.add('seleccionado');
   casillas[pos].innerHTML = letra + '<div class="capibara">🧀</div>';
   seleccion.push({pos, letra});
   document.getElementById('palabra').textContent = seleccion.map(s => s.letra).join('');
-  
+
   if(seleccion.length === palabraActual.length) {
     const intento = seleccion.map(s => s.letra).join('');
     if(intento === palabraActual) {
       puntos += palabraActual.length * 10;
       document.getElementById('puntos').textContent = puntos;
-      document.getElementById('mensaje').textContent = `¡Correcto! +${palabraActual.length * 10} pts 🧀`;
+      document.getElementById('mensaje').textContent = `¡Muy bien! 🧀`;
+      hablar(`¡Correcto! La palabra es ${palabraActual.toLowerCase()}`);
       setTimeout(() => {
         nivelActual++;
         if(nivelActual >= niveles.length) {
@@ -113,9 +132,10 @@ function seleccionarLetra(pos, letra) {
         } else {
           nuevoJuego();
         }
-      }, 1500);
+      }, 2000);
     } else {
-      document.getElementById('mensaje').textContent = 'Sigue intentando 💪';
+      document.getElementById('mensaje').textContent = 'Intenta otra vez 💪';
+      hablar('Intenta otra vez');
       setTimeout(() => {
         seleccion.forEach(s => {
           casillas[s.pos].classList.remove('seleccionado');
@@ -123,7 +143,7 @@ function seleccionarLetra(pos, letra) {
         });
         seleccion = [];
         document.getElementById('palabra').textContent = '';
-      }, 1000);
+      }, 1500);
     }
   }
 }
@@ -131,6 +151,7 @@ function seleccionarLetra(pos, letra) {
 function mostrarFinal() {
   document.getElementById('puntosFinal').textContent = puntos;
   document.getElementById('final').style.display = 'flex';
+  hablar('¡Felicidades! ¡Ganaste todo! Ya sabes leer');
 }
 
 function reiniciarTodo() {
